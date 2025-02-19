@@ -1,5 +1,5 @@
 ---
-title: "WednesdayNo.1"
+title: "WednesdayNo1"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
@@ -9,4 +9,41 @@ output:
 
 ```{r setup, include=FALSE}
 library(flexdashboard)
+library(tidyverse)
+library(plotly)
 ```
+
+# Introduction
+
+blahblahblah
+
+## Column {data-width="650"}
+
+### Chart A
+
+```{r}
+
+```
+
+## Column {data-width="350"}
+
+### Chart B
+
+```{r}
+
+```
+
+### Chart C
+
+```{r}
+
+```
+
+# Visualisation
+
+### Plot A
+```{r}
+
+```
+
+# Conclusion

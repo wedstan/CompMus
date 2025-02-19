@@ -22,7 +22,7 @@ blahblahblah
 ### Chart A
 
 ```{r}
-
+'test'
 ```
 
 ## Column {data-width="350"}

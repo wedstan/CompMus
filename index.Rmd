@@ -11,39 +11,48 @@ output:
 library(flexdashboard)
 library(tidyverse)
 library(plotly)
+library(shiny)
+library(jsonlite)#essentia 
 ```
 
-# Introduction
+# Introduction{.tabset}
 
-blahblahblah
-
-## Column {data-width="650"}
-
-### Chart A
+### Origin of My Selected Tracks{.column data-width=10% .center}
 
 ```{r}
-'test'
+valueBox("AIVA’s Styles Library")
 ```
-
-## Column {data-width="350"}
-
-### Chart B
-
+### I was particularly drawn to their groove, rhythmic patterns and danceable energy. The uplifting beats and engaging melodies create an inspiring and refreshing listening experience. \n Curious whether there is a pattern or template that can be extracted. Specifically, a structured approach that could transform a calm or melancholic piece of music into an exciting, dance-inducing track.{.column data-width=50% .center}
+<div style="text-align: center;">
+  <p style="font-size: 18px; max-width: 80%; margin: auto;">
+  </p>
+</div>
 ```{r}
-
+valueBox("Why These?")
 ```
-
-### Chart C
-
+### blahblahblah
 ```{r}
-
+valueBox("Analysis")
 ```
 
 # Visualisation
 
 ### Plot A
-```{r}
 
+```{r, eval=FALSE}
+bpm_data <- data.frame(
+    track = c("Track A", "Track B", "Track C"),
+    bpm = c(essentia_features$rhythm.bpm)
+)
 ```
+
+```{r, eval=FALSE}
+fig.width=10, fig.height=5
+> captions with inline code
+```
+
+***
+
+commentary zheli 
 
 # Conclusion

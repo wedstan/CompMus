@@ -13,62 +13,77 @@ library(tidyverse)
 library(plotly)
 library(shiny)
 library(jsonlite)#essentia 
+library(readr)
+library(ggplot2)
+aisc2024 <- read_csv("aisc2024.csv")
 ```
 
-# Introduction{.tabset}
+# Introduction {.tabset}
 
-### Origin of My Selected Tracks{.column data-width=10% .center}
+### Origin of My Selected Tracks {.column .center data-width="10%"}
 
 ```{r}
 valueBox("AIVA’s Styles Library")
 ```
-### I was particularly drawn to their groove, rhythmic patterns and danceable energy. The uplifting beats and engaging melodies create an inspiring and refreshing listening experience. \n Curious whether there is a pattern or template that can be extracted. Specifically, a structured approach that could transform a calm or melancholic piece of music into an exciting, dance-inducing track.{.column data-width=50% .center}
-<div style="text-align: center;">
-  <p style="font-size: 18px; max-width: 80%; margin: auto;">
-  </p>
-</div>
+
+### I was particularly drawn to their groove, rhythmic patterns and danceable energy. The uplifting beats and engaging melodies create an inspiring and refreshing listening experience. \n Curious whether there is a pattern or template that can be extracted. Specifically, a structured approach that could transform a calm or melancholic piece of music into an exciting, dance-inducing track. {.column .center data-width="50%"}
+
+::: {style="text-align: center;"}
+<p style="font-size: 18px; max-width: 80%; margin: auto;">
+
+</p>
+:::
+
 ```{r}
 valueBox("Why These?")
 ```
+
 ### blahblahblah
+
 ```{r}
 valueBox("Analysis")
 ```
 
 # Visualisation
 
-### Plot A
+## Column {.tabset}
 
-```{r}
-aisc2024 <- read_csv("Desktop/C.Music/aisc2024.csv")
-aisc2024 |>
-  summarise(
-    mean_tempo = mean(tempo),
-    sd_tempo = sd(tempo),
-    median_tempo = median(tempo),
-    mad_tampo = mad(tempo)
-  )
+### Tempo vs Danceablity
 
+```{r fig.height=4, fig.width=6}
 aisc2024 |> 
-  ggplot(aes(x = tempo)) + 
-  geom_histogram(binwidth = 10)
+  ggplot(aes(x = tempo,y=danceability)) + 
+  geom_jitter() + geom_smooth() -> p1
+ggplotly(p1)
+```
+> **Analysis:**<br><br>
+- Danceability is highest at 60-80 BPM, suggesting that slower-paced music might be more suitable for dancing. <br><br>
+- Danceability significantly decreases above 130 BPM, indicating that fast-paced music is more suitable for listening rather than dancing.
 
-#geom_smooth()会画出平滑趋势曲线，计算并绘制置信区间
-aisc2024 |> ggplot(aes(x = tempo, y = arousal))+ 
-  geom_point() + geom_smooth()
+## Column {.tabset}
 
+### Tempo vs Arousal
+
+```{r, fig.width=6, fig.height=4}
 #在散点图上添加随机抖动（Jitter）的函数。
 #它的作用是减少点重叠（Overlapping），提高可读性。
 aisc2024 |> ggplot(aes(x = tempo, y = arousal)) + 
-  geom_jitter() + geom_smooth()
+  geom_jitter() + geom_smooth() -> p1
+ggplotly(p1)
+```
 
-#
+> **Analysis:**<br><br>
+- Music with tempos between 100-130 BPM has the highest Arousal, suggesting that this tempo range makes music more exciting and stimulating, making it ideal for boosting attention or enhancing emotions.<br><br>
+- Arousal starts to decrease above 130 BPM, possibly because the extremely fast tempo causes music to lose emotional expression, making it feel more monotonous or mechanical.
+
+### +Danceablity
+
+```{r, fig.width=6, fig.height=4}
 aisc2024 |>                   # Start with the data
   ggplot(                     # Set up the plot.
     aes(
       x = tempo,
       y = arousal,
-      size = instrumentalness,
       colour = danceability
     )
   ) +geom_point() +              # Scatter plot.
@@ -85,13 +100,53 @@ scale_x_continuous(         # 设置x范围
   scale_colour_viridis_c() +  # 颜色渐变
   scale_size_continuous(      # Fine-tune the sizes of each point.
     trans = "exp",            # Use an exp transformation to emphasise loud..
-    guide = "none"            # Remove the legend for size.
+    guide = guide_colorbar(barwidth = 10)        # Remove the legend for size.
   ) +
   theme_light() +             # Use a simpler theme.
   labs(                       # Make the titles nice.
     x = "Tempo",
     y = "Arousal",
-    colour = "Danceability"
+    colour = "Danceability  "
+  )+
+  theme(
+    legend.key.width = unit(1, "cm"),  # **固定图例宽度**
+    legend.key.height = unit(1, "cm")  # **固定图例高度**
+  )
+```
+
+### +Valence
+
+```{r, fig.width=6, fig.height=4}
+ggplot( aisc2024,
+      aes(x = tempo,
+      y = arousal,
+      colour = valence
+    )
+  ) +geom_point() +              # Scatter plot.
+scale_x_continuous(         # 设置x范围
+    limits = c(60, 160),
+    breaks = c(60,80,100,120,140, 160), # Specify grid lines
+    minor_breaks = NULL       # Remove 'minor' grid lines.
+  ) +
+  scale_y_continuous(         # Fine-tune the y axis in the same way.
+   limits = c(4, 5),
+    breaks = c(3, 6),
+    minor_breaks = NULL
+  ) +
+  scale_colour_viridis_c() +  # 颜色渐变
+  scale_size_continuous(      # Fine-tune the sizes of each point.
+    trans = "exp",            # Use an exp transformation to emphasise loud..
+    guide = guide_colorbar(barwidth = 10)          # Remove the legend for size.
+  ) +
+  theme_light() +             # Use a simpler theme.
+  labs(                       # Make the titles nice.
+    x = "Tempo",
+    y = "Arousal",
+    colour = "Valence Score"
+  )+
+  theme(
+    legend.key.width = unit(1, "cm"),  # **固定图例宽度**
+    legend.key.height = unit(1, "cm")  # **固定图例高度**
   )
 ```
 
@@ -99,9 +154,5 @@ scale_x_continuous(         # 设置x范围
 fig.width=10, fig.height=5
 > captions with inline code
 ```
-
-***
-
-commentary zheli 
 
 # Conclusion

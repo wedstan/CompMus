@@ -15,7 +15,160 @@ library(shiny)
 library(jsonlite)#essentia 
 library(readr)
 library(ggplot2)
-aisc2024 <- read_csv("aisc2024.csv")
+library(tidyverse)
+source("compmus.R")
+compmus2025 <- read_csv("compmus2025.csv")
+```
+## 4ever Fixed 
+
+# Week9 assignment page
+
+Column{.tabset}
+--------
+
+### Chromagram of Track 1 
+
+```{r}
+"features/wednesday-w-1.json" |>                           # Change the track
+  compmus_chroma(norm = "identity") |>                 
+  # Change the norm
+  ggplot(aes(x = time, y = pc, fill = value)) + 
+  geom_raster() +
+  scale_y_continuous(
+    breaks = 0:11,
+    minor_breaks = NULL,
+    labels = c(
+                "C", "C#|Db", "D", "D#|Eb",
+                "E", "F", "F#|Gb", "G",
+                "G#|Ab", "A", "A#|Bb", "B"
+              )
+  ) +
+  scale_fill_viridis_c(guide = "none") +               
+  # Change the colours?
+  labs(x = "Time (s)", y = NULL, fill = NULL) +
+  theme_classic()  
+```
+
+### Cepstrogram 
+
+```{r}
+"features/wednesday-w-1.json" |>                           #Change the track
+  compmus_mfccs(norm = "identity") |>                  #Change the norm
+  ggplot(aes(x = time, y = mfcc, fill = value)) + 
+  geom_raster() +
+  scale_y_continuous(
+    breaks = 0:12,
+    minor_breaks = NULL,
+  ) +
+  scale_fill_viridis_c(guide = "none") +               #Change the colours?
+  labs(x = "Time (s)", y = "Coefficient Number", fill = NULL) +
+  theme_classic()                                      
+```
+
+### Chroma-based 
+
+```{r}
+"features/wednesday-w-1.json" |>                           # Change the track
+  compmus_chroma(norm = "identity") |>                 # Change the norm
+  compmus_self_similarity(
+    feature = pc,
+    distance = "euclidean"                             # Change the distance
+  ) |>   
+  ggplot(aes(x = xtime, y = ytime, fill = d)) + 
+  geom_raster() +
+  scale_fill_viridis_c(guide = "none") +               # Change the colours?
+  labs(x = "Time (s)", y = NULL, fill = NULL) +
+  theme_classic() 
+```
+
+### Timbre-based
+
+```{r}
+"features/wednesday-w-1.json" |>                           # Change the track
+  compmus_mfccs(norm = "identity") |>                  # Change the norm
+  compmus_self_similarity(
+    feature = mfcc,
+    distance = "euclidean"                             # Change the distance
+  ) |>   
+  ggplot(aes(x = xtime, y = ytime, fill = d)) + 
+  geom_raster() +
+  scale_fill_viridis_c(guide = "none") +               # Change the colours?
+  labs(x = "Time (s)", y = NULL, fill = NULL) +
+  theme_classic() 
+```
+
+Column{.tabset}
+----
+
+### Chromagram of Track 2
+
+```{r}
+"features/wednesday-w-2.json" |>                           # Change the track
+  compmus_chroma(norm = "identity") |>                 
+  # Change the norm
+  ggplot(aes(x = time, y = pc, fill = value)) + 
+  geom_raster() +
+  scale_y_continuous(
+    breaks = 0:11,
+    minor_breaks = NULL,
+    labels = c(
+                "C", "C#|Db", "D", "D#|Eb",
+                "E", "F", "F#|Gb", "G",
+                "G#|Ab", "A", "A#|Bb", "B"
+              )
+  ) +
+  scale_fill_viridis_c(guide = "none") +              
+  # Change the colours?
+  labs(x = "Time (s)", y = NULL, fill = NULL, main = "track 1 chromagrams") +
+  theme_classic()  
+```
+
+### Cepstrogram
+
+```{r}
+"features/wednesday-w-2.json" |>                           #Change the track
+  compmus_mfccs(norm = "identity") |>                  #Change the norm
+  ggplot(aes(x = time, y = mfcc, fill = value)) + 
+  geom_raster() +
+  scale_y_continuous(
+    breaks = 0:12,
+    minor_breaks = NULL,
+  ) +
+  scale_fill_viridis_c(guide = "none") +               #Change the colours?
+  labs(x = "Time (s)", y = "Coefficient Number", fill = NULL) +
+  theme_classic()                                      
+```
+
+### Chroma-based 
+
+```{r}
+"features/wednesday-w-2.json" |>                           # Change the track
+  compmus_chroma(norm = "identity") |>                 # Change the norm
+  compmus_self_similarity(
+    feature = pc,
+    distance = "euclidean"                             # Change the distance
+  ) |>   
+  ggplot(aes(x = xtime, y = ytime, fill = d)) + 
+  geom_raster() +
+  scale_fill_viridis_c(guide = "none") +               # Change the colours?
+  labs(x = "Time (s)", y = NULL, fill = NULL) +
+  theme_classic() 
+```
+
+### Timbre-based
+
+```{r}
+"features/wednesday-w-2.json" |>                           # Change the track
+  compmus_mfccs(norm = "identity") |>                  # Change the norm
+  compmus_self_similarity(
+    feature = mfcc,
+    distance = "euclidean"                             # Change the distance
+  ) |>   
+  ggplot(aes(x = xtime, y = ytime, fill = d)) + 
+  geom_raster() +
+  scale_fill_viridis_c(guide = "none") +               # Change the colours?
+  labs(x = "Time (s)", y = NULL, fill = NULL) +
+  theme_classic() 
 ```
 
 # Introduction {.tabset}
@@ -44,42 +197,131 @@ valueBox("Why These?")
 valueBox("Analysis")
 ```
 
+# Hidden secret of Class Corpus
+
+## Column {.tabset}
+
+### How Mainstream Are we?
+
+```{r}
+boxplot(
+  compmus2025$approachability,
+  horizontal = TRUE,
+  col = "lightblue",
+  main = "Approachability Boxplot",
+  xlab = "Approachability Score",
+  outpch = 16,
+  outcol = "lightpink"
+)
+```
+
+## Column {.tabset}
+
+### How Mainstream Are we?
+
+```{r}
+hist(compmus2025$approachability, 
+     breaks = 10, 
+     col = "skyblue",
+     main = "Distribution of Approachability",
+     xlab = "Approachability Score",
+     ylab = "Frequency")
+```
+
+## Column {.tabset}
+
+### How Mainstream Are we?
+
+```{r}
+boxplot(
+  compmus2025$approachability,
+  horizontal = TRUE,
+  col = "lightblue",
+  main = "Approachability Boxplot",
+  xlab = "Approachability Score",
+  outpch = 16,
+  outcol = "lightpink"
+)
+```
+
 # Visualisation
 
 ## Column {.tabset}
 
+### Chromagram
+
+```{r}
+"features/wednesday-w-1.json" |>                           # Change the track
+  compmus_chroma(norm = "identity") |>                 
+  # Change the norm
+  ggplot(aes(x = time, y = pc, fill = value)) + 
+  geom_raster() +
+  scale_y_continuous(
+    breaks = 0:11,
+    minor_breaks = NULL,
+    labels = c(
+                "C", "C#|Db", "D", "D#|Eb",
+                "E", "F", "F#|Gb", "G",
+                "G#|Ab", "A", "A#|Bb", "B"
+              )
+  ) +
+  scale_fill_viridis_c(guide = "none") +              
+  # Change the colours?
+  labs(x = "Time (s)", y = NULL, fill = NULL) +
+  theme_classic()  
+```
+
+### Cepstrogram
+
+```{r}
+"features/wednesday-w-1.json" |>                           #Change the track
+  compmus_mfccs(norm = "identity") |>                  #Change the norm
+  ggplot(aes(x = time, y = mfcc, fill = value)) + 
+  geom_raster() +
+  scale_y_continuous(
+    breaks = 0:12,
+    minor_breaks = NULL,
+  ) +
+  scale_fill_viridis_c(guide = "none") +               #Change the colours?
+  labs(x = "Time (s)", y = "Coefficient Number", fill = NULL) +
+  theme_classic()                                      
+```
+
 ### Tempo vs Danceablity
 
 ```{r fig.height=4, fig.width=6}
-aisc2024 |> 
+compmus2025 |> 
   ggplot(aes(x = tempo,y=danceability)) + 
   geom_jitter() + geom_smooth() -> p1
 ggplotly(p1)
 ```
-> **Analysis:**<br><br>
-- Danceability is highest at 60-80 BPM, suggesting that slower-paced music might be more suitable for dancing. <br><br>
-- Danceability significantly decreases above 130 BPM, indicating that fast-paced music is more suitable for listening rather than dancing.
+
+> **Analysis:**<br><br> - Danceability is highest at 60-80 BPM, suggesting that slower-paced music might be more suitable for dancing. <br><br> - Danceability significantly decreases above 130 BPM, indicating that fast-paced music is more suitable for listening rather than dancing.
 
 ## Column {.tabset}
 
 ### Tempo vs Arousal
 
-```{r, fig.width=6, fig.height=4}
-#在散点图上添加随机抖动（Jitter）的函数。
-#它的作用是减少点重叠（Overlapping），提高可读性。
-aisc2024 |> ggplot(aes(x = tempo, y = arousal)) + 
-  geom_jitter() + geom_smooth() -> p1
-ggplotly(p1)
+```{r}
+"features/sytze-m-1.json" |>                           #Change the track
+  compmus_mfccs(norm = "identity") |>                  #Change the norm
+  ggplot(aes(x = time, y = mfcc, fill = value)) + 
+  geom_raster() +
+  scale_y_continuous(
+    breaks = 0:12,
+    minor_breaks = NULL,
+  ) +
+  scale_fill_viridis_c(guide = "none") +               #Change the colours?
+  labs(x = "Time (s)", y = "Coefficient Number", fill = NULL) +
+  theme_classic()                                      
 ```
 
-> **Analysis:**<br><br>
-- Music with tempos between 100-130 BPM has the highest Arousal, suggesting that this tempo range makes music more exciting and stimulating, making it ideal for boosting attention or enhancing emotions.<br><br>
-- Arousal starts to decrease above 130 BPM, possibly because the extremely fast tempo causes music to lose emotional expression, making it feel more monotonous or mechanical.
+> **Analysis:**<br><br> - Music with tempos between 100-130 BPM has the highest Arousal, suggesting that this tempo range makes music more exciting and stimulating, making it ideal for boosting attention or enhancing emotions.<br><br> - Arousal starts to decrease above 130 BPM, possibly because the extremely fast tempo causes music to lose emotional expression, making it feel more monotonous or mechanical.
 
 ### +Danceablity
 
 ```{r, fig.width=6, fig.height=4}
-aisc2024 |>                   # Start with the data
+compmus2025 |>                   # Start with the data
   ggplot(                     # Set up the plot.
     aes(
       x = tempo,
@@ -117,7 +359,7 @@ scale_x_continuous(         # 设置x范围
 ### +Valence
 
 ```{r, fig.width=6, fig.height=4}
-ggplot( aisc2024,
+ggplot( compmus2025,
       aes(x = tempo,
       y = arousal,
       colour = valence

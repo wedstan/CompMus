@@ -5,6 +5,9 @@ output:
     orientation: columns
     vertical_layout: fill
     storyboard: true
+    theme: 
+      version: 4
+      bootswatch: minty
 ---
 
 ```{r setup, include=FALSE}
@@ -19,12 +22,28 @@ library(tidyverse)
 source("compmus.R")
 compmus2025 <- read_csv("compmus2025.csv")
 ```
-## 4ever Fixed 
+## 4ever Fixed title
 
-# Week9 assignment page
+# assignment page
 
 Column{.tabset}
 --------
+
+### Chordogram
+```{r}
+"features/berend-b-1.json" |> 
+  compmus_chroma(norm = "identity") |> 
+  compmus_match_pitch_templates(
+    key_templates,         # Change to chord_templates if desired
+    norm = "identity",       # Try different norms (and match it with what you used in `compmus_chroma`)
+    distance = "cosine"   # Try different distance metrics
+  ) |>
+  ggplot(aes(x = time, y = name, fill = d)) + 
+  geom_raster() +
+  scale_fill_viridis_c(option = "G") +               # Change the colours?
+  labs(x = "Time (s)", y = "Template", fill = NULL) +
+  theme_classic() 
+```
 
 ### Chromagram of Track 1 
 
@@ -43,7 +62,7 @@ Column{.tabset}
                 "G#|Ab", "A", "A#|Bb", "B"
               )
   ) +
-  scale_fill_viridis_c(guide = "none") +               
+  scale_fill_viridis_c(option = "G") +               
   # Change the colours?
   labs(x = "Time (s)", y = NULL, fill = NULL) +
   theme_classic()  
@@ -117,7 +136,7 @@ Column{.tabset}
                 "G#|Ab", "A", "A#|Bb", "B"
               )
   ) +
-  scale_fill_viridis_c(guide = "none") +              
+  scale_fill_viridis_c(option = "G") +              
   # Change the colours?
   labs(x = "Time (s)", y = NULL, fill = NULL, main = "track 1 chromagrams") +
   theme_classic()  

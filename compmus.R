@@ -233,7 +233,7 @@ compmus_self_similarity <- function(dat, feature, distance = "euclidean") {
 #' major_chord <-
 #'   c(1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0)
 #' minor_chord <-
-#'   c(1, 0, 0, 1, 0, , 0, 1, 0, 0, 0, 0)
+#'   c(1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0)
 #' chord_templates <-
 #'   tribble(
 #'     ~name, ~template,
@@ -363,84 +363,148 @@ compmus_mfccs <- function(file, norm = "identity") {
     dplyr::mutate(time = 1024 * time / 44100)
 }
 
-#      C     C#    D     Eb    E     F     F#    G     Ab    A     Bb    B
-major_chord <-
-  c(   1,    0,    0,    0,    1,    0,    0,    1,    0,    0,    0,    0)
-minor_chord <-
-  c(   1,    0,    0,    1,    0,    0,    0,    1,    0,    0,    0,    0)
-seventh_chord <-
-  c(   1,    0,    0,    0,    1,    0,    0,    1,    0,    0,    1,    0)
+compmus_energy_novelty <- function(file) {
+  rjson::fromJSON(file = file) |>
+    purrr::pluck("lowlevel", "loudness_ebu128", "short_term") |>
+    (\(v) v[2:length(v)] - v[1:(length(v) - 1)])() |>
+    pmax(0) |>
+    (\(v) tibble::tibble(t = 0.1 * (1:length(v)) + 0.1, novelty = v))()
+}
 
-major_key <-
-  c(6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88)
-minor_key <-
-  c(6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17)
+compmus_spectral_novelty <- function(file, norm = "euclidean", distance = "euclidean") {
+  ## Supported functions
 
-chord_templates <-
-  tribble(
-    ~name, ~template,
-    "Gb:7", circshift(seventh_chord, 6),
-    "Gb:maj", circshift(major_chord, 6),
-    "Bb:min", circshift(minor_chord, 10),
-    "Db:maj", circshift(major_chord, 1),
-    "F:min", circshift(minor_chord, 5),
-    "Ab:7", circshift(seventh_chord, 8),
-    "Ab:maj", circshift(major_chord, 8),
-    "C:min", circshift(minor_chord, 0),
-    "Eb:7", circshift(seventh_chord, 3),
-    "Eb:maj", circshift(major_chord, 3),
-    "G:min", circshift(minor_chord, 7),
-    "Bb:7", circshift(seventh_chord, 10),
-    "Bb:maj", circshift(major_chord, 10),
-    "D:min", circshift(minor_chord, 2),
-    "F:7", circshift(seventh_chord, 5),
-    "F:maj", circshift(major_chord, 5),
-    "A:min", circshift(minor_chord, 9),
-    "C:7", circshift(seventh_chord, 0),
-    "C:maj", circshift(major_chord, 0),
-    "E:min", circshift(minor_chord, 4),
-    "G:7", circshift(seventh_chord, 7),
-    "G:maj", circshift(major_chord, 7),
-    "B:min", circshift(minor_chord, 11),
-    "D:7", circshift(seventh_chord, 2),
-    "D:maj", circshift(major_chord, 2),
-    "F#:min", circshift(minor_chord, 6),
-    "A:7", circshift(seventh_chord, 9),
-    "A:maj", circshift(major_chord, 9),
-    "C#:min", circshift(minor_chord, 1),
-    "E:7", circshift(seventh_chord, 4),
-    "E:maj", circshift(major_chord, 4),
-    "G#:min", circshift(minor_chord, 8),
-    "B:7", circshift(seventh_chord, 11),
-    "B:maj", circshift(major_chord, 11),
-    "D#:min", circshift(minor_chord, 3)
+  manhattan <- function(x, y) sum(abs(x - y))
+  euclidean <- function(x, y) sqrt(sum((x - y)^2))
+  chebyshev <- function(x, y) max(abs(x - y))
+  pearson <- function(x, y) 1 - cor(x, y)
+  cosine <- function(x, y) {
+    1 - sum(compmus_normalise(x, "euc") * compmus_normalise(y, "euc"))
+  }
+  angular <- function(x, y) 2 * acos(1 - cosine(x, y)) / pi
+  aitchison <- function(x, y) {
+    euclidean(compmus_normalise(x, "clr"), compmus_normalise(y, "clr"))
+  }
+
+  ## Method aliases
+
+  METHODS <-
+    list(
+      manhattan = manhattan,
+      cityblock = manhattan,
+      taxicab = manhattan,
+      L1 = manhattan,
+      totvar = manhattan,
+      euclidean = euclidean,
+      L2 = euclidean,
+      chebyshev = chebyshev,
+      maximum = chebyshev,
+      pearson = pearson,
+      correlation = pearson,
+      cosine = cosine,
+      angular = angular,
+      aitchison = aitchison
+    )
+
+  ## Function selection
+
+  if (!is.na(i <- pmatch(distance, names(METHODS)))) {
+    rjson::fromJSON(file = file) |>
+      purrr::pluck("lowlevel", "mfcc") |>
+      purrr::map(\(v) compmus_normalise(v, norm)) |>
+      (\(v) purrr::map2_dbl(v[2:length(v)], v[1:(length(v) - 1)], METHODS[[i]]))() |>
+      (\(v) tibble::tibble(t = 1024 * (1:length(v) - 0.5) / 44100, novelty = v))()
+  } else {
+    stop("The distance name is ambiguous or the method is unsupported.")
+  }
+}
+
+#' @importFrom magrittr %>%
+.sample_tempogram <- function(y, f_s, window_size, hop_size, window_function, cyclic, bpms) {
+  window <- window_function(window_size)
+  if (cyclic) {
+    bpm_octaves <- rep(bpms, 5)
+    bpms <- bpms %>%
+      tcrossprod(2^(-2:2)) %>%
+      as.vector()
+  } else {
+    bpm_octaves <- bpms
+  }
+  bases <-
+    exp(tcrossprod(-2 * pi * 1i * (bpms / 60) / f_s, 0:(window_size - 1)))
+  if (length(y) > window_size) {
+    starts <- seq(1, length(y) - window_size, by = hop_size)
+  } else {
+    starts <- 1
+  }
+  windowed <- matrix(0, window_size, length(starts))
+  for (n in 1:length(starts)) {
+    windowed[, n] <- window * y[starts[n]:(starts[n] + window_size - 1)]
+  }
+  (bases %*% windowed) %>%
+    abs() %>%
+    magrittr::raise_to_power(2) %>%
+    as.vector() %>%
+    tibble::tibble(
+      time = rep((starts + window_size / 2) / f_s, each = length(bpms)),
+      bpm = rep(bpm_octaves, times = length(starts)),
+      power = .
+    ) %>%
+    dplyr::group_by(time, bpm) %>%
+    dplyr::summarise(power = sum(power)) %>%
+    dplyr::mutate(power = power / max(power)) %>%
+    dplyr::ungroup()
+}
+
+#' Compute a tempogram from Essentia segment onsets
+#'
+#' Computes a Fourier-based tempogram based on onsets of Spotify segments.
+#' Returns a tibble with \code{time}, \code{bpm}, and \code{power} columns.
+#' Power is normalised to a max of 1 (Chebyshev norm) within each time point.
+#'
+#' @param track_analysis Spotify audio analysis as returned by
+#'   \code{\link{get_tidy_audio_analysis}}.
+#' @param window_size Window size in seconds (default 8).
+#' @param hop_size Hop size in seconds (default 1).
+#' @param cyclic Boolean stating whether the tempogram should be cyclic (default
+#'   not).
+#' @param bpms Vector of tempi in beats per minute to include in the tempogram
+#'   (default 30--200 for non-cyclic and 80--160 for cyclic, inclusive of all
+#'   integer tempi).
+#' @param window_function Window function for the Fourier analysis (default
+#'   Hamming).
+#'
+#' @importFrom magrittr %>%
+#' @export
+#'
+#' @examples
+#' library(tidyverse)
+#' get_tidy_audio_analysis("6PJasPKAzNLSOzxeAH33j2") %>%
+#'   tempogram(window_size = 4, hop_size = 2)
+compmus_tempogram <- function(file, window_size = 8, hop_size = 1, cyclic = FALSE, bpms = if (cyclic) 80:160 else 30:600, window_function = signal::hamming) {
+  onsets <-
+    rjson::fromJSON(file = file) |>
+    purrr::pluck("rhythm", "beats_position") |>
+    magrittr::multiply_by(44100) %>%
+    round()
+
+  confidence <-
+    rjson::fromJSON(file = file) |>
+    purrr::pluck("rhythm", "beats_loudness")
+  duration <-
+    rjson::fromJSON(file = file) |>
+    purrr::pluck("metadata", "audio_properties", "length")
+
+  novelty <- rep(0, 44100 * duration)
+  novelty[onsets + 1] <- confidence
+
+  .sample_tempogram(
+    novelty,
+    f_s = 44100,
+    window_size = 44100 * window_size,
+    hop_size = 44100 * hop_size,
+    cyclic = cyclic,
+    bpms = bpms,
+    window_function = window_function
   )
-
-key_templates <-
-  tribble(
-    ~name, ~template,
-    "Gb:maj", circshift(major_key, 6),
-    "Bb:min", circshift(minor_key, 10),
-    "Db:maj", circshift(major_key, 1),
-    "F:min", circshift(minor_key, 5),
-    "Ab:maj", circshift(major_key, 8),
-    "C:min", circshift(minor_key, 0),
-    "Eb:maj", circshift(major_key, 3),
-    "G:min", circshift(minor_key, 7),
-    "Bb:maj", circshift(major_key, 10),
-    "D:min", circshift(minor_key, 2),
-    "F:maj", circshift(major_key, 5),
-    "A:min", circshift(minor_key, 9),
-    "C:maj", circshift(major_key, 0),
-    "E:min", circshift(minor_key, 4),
-    "G:maj", circshift(major_key, 7),
-    "B:min", circshift(minor_key, 11),
-    "D:maj", circshift(major_key, 2),
-    "F#:min", circshift(minor_key, 6),
-    "A:maj", circshift(major_key, 9),
-    "C#:min", circshift(minor_key, 1),
-    "E:maj", circshift(major_key, 4),
-    "G#:min", circshift(minor_key, 8),
-    "B:maj", circshift(major_key, 11),
-    "D#:min", circshift(minor_key, 3)
-  )
+}

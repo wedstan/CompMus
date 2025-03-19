@@ -29,20 +29,16 @@ compmus2025 <- read_csv("compmus2025.csv")
 Column{.tabset}
 --------
 
-### Chordogram
+### Novelty
+
 ```{r}
-"features/berend-b-1.json" |> 
-  compmus_chroma(norm = "identity") |> 
-  compmus_match_pitch_templates(
-    key_templates,         # Change to chord_templates if desired
-    norm = "identity",       # Try different norms (and match it with what you used in `compmus_chroma`)
-    distance = "cosine"   # Try different distance metrics
-  ) |>
-  ggplot(aes(x = time, y = name, fill = d)) + 
-  geom_raster() +
-  scale_fill_viridis_c(option = "G") +               # Change the colours?
-  labs(x = "Time (s)", y = "Template", fill = NULL) +
-  theme_classic() 
+"features/ahram-j-1.json" |>
+  compmus_energy_novelty() |> 
+  ggplot(aes(t, novelty)) +
+  geom_line() +
+  theme_minimal() +
+  scale_color_gradientn(colours =rainbow(10))+
+  labs(x = "Time (s)", y = "Energy Novelty")
 ```
 
 ### Chromagram of Track 1 

@@ -219,15 +219,6 @@ valueBox("Analysis")
 ### How Mainstream Are we?
 
 ```{r}
-boxplot(
-  compmus2025$approachability,
-  horizontal = TRUE,
-  col = "lightblue",
-  main = "Approachability Boxplot",
-  xlab = "Approachability Score",
-  outpch = 16,
-  outcol = "lightpink"
-)
 ```
 
 ## Column {.tabset}
@@ -237,6 +228,8 @@ boxplot(
 ```{r}
 hist(compmus2025$approachability, 
      breaks = 10, 
+     xlim = 0,
+     ylim = 30,
      col = "skyblue",
      main = "Distribution of Approachability",
      xlab = "Approachability Score",
@@ -248,15 +241,6 @@ hist(compmus2025$approachability,
 ### How Mainstream Are we?
 
 ```{r}
-boxplot(
-  compmus2025$approachability,
-  horizontal = TRUE,
-  col = "lightblue",
-  main = "Approachability Boxplot",
-  xlab = "Approachability Score",
-  outpch = 16,
-  outcol = "lightpink"
-)
 ```
 
 # Visualisation

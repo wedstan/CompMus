@@ -145,6 +145,22 @@ compmus2025_filtered |>
   )
 ```
 
+### How Mainstream Are we?
+
+```{r}
+boxplot(
+  compmus2025$danceability,
+  horizontal = TRUE,
+  col = "lightblue",
+  main = "Approachability Boxplot",
+  xlab = "Approachability Score",
+  xlim = 10,
+  ylim = 10,
+  outpch = 16,
+  outcol = "lightpink"
+)
+```
+
 ### Novelty
 
 ```{r}

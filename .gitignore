@@ -36,6 +36,6 @@ rsconnect/
 # 0226
 compus2025.csv/
 features/
-corpus
-index_files
+corpus/
+index_files/
 compmus2025.csv

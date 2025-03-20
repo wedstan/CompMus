@@ -26,6 +26,9 @@ source("compmus.R")
 compmus2025 <- read_csv("compmus2025.csv")
 ```
 
+
+## 4ever Fixed title
+
 ```{r}
 get_conf_mat <- function(fit) {
   outcome <- .get_tune_outcome_names(fit)
@@ -66,7 +69,9 @@ cluster_juice <-
 ### Hierachical clustering
 
 ```{r}
-compmus_dist <- dist(cluster_juice, method = "euclidean")
+compmus_dist <- cluster_juice %>%
+  slice_head(n = 10) %>%
+  dist(cluster_juice, method = "euclidean") 
 compmus_dist |> 
   hclust(method = "average") |> # Try single, average, and complete.
   dendro_data() |>
@@ -76,6 +81,8 @@ compmus_dist |>
 ### Heatmaps
 
 ```{r}
+cluster_juice <- cluster_juice %>%
+  slice_head(n = 10)
 heatmaply(
   cluster_juice,
   hclustfun = hclust,
@@ -83,9 +90,6 @@ heatmaply(
   dist_method = "euclidean"
 )
 ```
-
-
-## 4ever Fixed title
 
 # assignment page
 

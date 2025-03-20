@@ -13,15 +13,78 @@ output:
 ```{r setup, include=FALSE}
 library(flexdashboard)
 library(tidyverse)
+library(tidymodels)
+library(ggdendro)
+library(heatmaply)
 library(plotly)
 library(shiny)
-library(jsonlite)#essentia 
+library(jsonlite) 
 library(readr)
 library(ggplot2)
 library(tidyverse)
 source("compmus.R")
 compmus2025 <- read_csv("compmus2025.csv")
 ```
+
+```{r}
+get_conf_mat <- function(fit) {
+  outcome <- .get_tune_outcome_names(fit)
+  fit |> 
+    collect_predictions() |> 
+    conf_mat(truth = outcome, estimate = .pred_class)
+}  
+
+get_pr <- function(fit) {
+  fit |> 
+    conf_mat_resampled() |> 
+    group_by(Prediction) |> mutate(precision = Freq / sum(Freq)) |> 
+    group_by(Truth) |> mutate(recall = Freq / sum(Freq)) |> 
+    ungroup() |> filter(Prediction == Truth) |> 
+    select(class = Prediction, precision, recall)
+}  
+```
+
+```{r}
+cluster_juice <-
+  recipe(
+    filename ~
+      arousal +
+      danceability +
+      instrumentalness +
+      tempo +
+      valence,
+    data = compmus2025
+  ) |>
+  step_center(all_predictors()) |>
+  step_scale(all_predictors()) |> 
+  # step_range(all_predictors()) |> 
+  prep(compmus2025) |>
+  juice() |>
+  column_to_rownames("filename")
+```
+
+### Hierachical clustering
+
+```{r}
+compmus_dist <- dist(cluster_juice, method = "euclidean")
+compmus_dist |> 
+  hclust(method = "average") |> # Try single, average, and complete.
+  dendro_data() |>
+  ggdendrogram()
+```
+
+### Heatmaps
+
+```{r}
+heatmaply(
+  cluster_juice,
+  hclustfun = hclust,
+  hclust_method = "average",  # Change for single, average, or complete linkage.
+  dist_method = "euclidean"
+)
+```
+
+
 ## 4ever Fixed title
 
 # assignment page
@@ -226,10 +289,8 @@ valueBox("Analysis")
 ### How Mainstream Are we?
 
 ```{r}
-hist(compmus2025$approachability, 
+hist(compmus2025$arousal, 
      breaks = 10, 
-     xlim = 0,
-     ylim = 30,
      col = "skyblue",
      main = "Distribution of Approachability",
      xlab = "Approachability Score",
@@ -241,6 +302,15 @@ hist(compmus2025$approachability,
 ### How Mainstream Are we?
 
 ```{r}
+boxplot(
+  compmus2025$danceability,
+  horizontal = TRUE,
+  col = "lightblue",
+  main = "Approachability Boxplot",
+  xlab = "Approachability Score",
+  outpch = 16,
+  outcol = "lightpink"
+)
 ```
 
 # Visualisation

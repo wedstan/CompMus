@@ -1,0 +1,42 @@
+---
+title: "WednesdayNo.1"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    storyboard: true
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(tidymodels)
+library(ggdendro)
+library(heatmaply)
+library(plotly)
+library(shiny)
+library(jsonlite) 
+library(readr)
+library(ggplot2)
+library(tidyverse)
+source("compmus.R")
+```
+
+# 大标题1
+
+## 中标题
+
+Column{.tabset}
+---
+
+### 小标题1
+
+### 小标题2
+
+Column{.tabset}
+---
+### 小标题1
+
+### 小标题2
+
+# 大标题2

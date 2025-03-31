@@ -105,9 +105,39 @@ key_templates <-
     "B:maj", circshift(major_key, 11),
     "D#:min", circshift(minor_key, 3)
   )
-```
+get_conf_mat <- function(fit) {
+  outcome <- .get_tune_outcome_names(fit)
+  fit |> 
+    collect_predictions() |> 
+    conf_mat(truth = outcome, estimate = .pred_class)
+}  
 
-## What Makes Music Danceable?
+get_pr <- function(fit) {
+  fit |> 
+    conf_mat_resampled() |> 
+    group_by(Prediction) |> mutate(precision = Freq / sum(Freq)) |> 
+    group_by(Truth) |> mutate(recall = Freq / sum(Freq)) |> 
+    ungroup() |> filter(Prediction == Truth) |> 
+    select(class = Prediction, precision, recall)
+}  
+cluster_juice <-
+  recipe(
+    filename ~
+      arousal +
+      danceability +
+      instrumentalness +
+      tempo +
+      valence,
+    data = compmus2025
+  ) |>
+  step_center(all_predictors()) |>
+  step_scale(all_predictors()) |> 
+  # step_range(all_predictors()) |> 
+  prep(compmus2025) |>
+  juice() |>
+  column_to_rownames("filename")
+compmus_dist <- dist(cluster_juice, method = "euclidean")
+```
 
 # Introduction {.tabset}
 
@@ -129,15 +159,50 @@ valueBox("AIVA’s Styles Library")
 valueBox("Why These?")
 ```
 
-### 首先分别提取比较danceability高和低的前三之间各种tracklevel的区别？3，预测时可以分别看ai和nonai根据预测方法的准确性
+### Top vs Bottom Danceability Heatmap Analysis{.column .center data-width="90%"}
 
-```{r}
-valueBox("Analysis")
+```{r fig.width=10, fig.height=4}
+compmus_dist |> 
+  hclust(method = "single") |> # Try single, average, and complete.
+  dendro_data() |>
+  ggdendrogram()
+top5 <- cluster_juice |> arrange(desc(danceability)) |> head(5)
+bottom5 <- cluster_juice |> arrange(danceability) |> head(5)
+
+# 画图
+top_plot <- heatmaply(top5,
+          main = NULL,  # 去掉标题避免太挤
+          dist_method = "euclidean",
+          hclust_method = "average")
+
+bottom_plot <- heatmaply(bottom5,
+          main = NULL,
+          dist_method = "euclidean",
+          hclust_method = "average")
+
+subplot(
+  top_plot, bottom_plot,
+  titleX = TRUE,
+  titleY = TRUE,
+  margin = 0.02
+) %>%
+layout(
+  title = list(
+    text = "Top vs Bottom 5 Danceability Tracks",
+    x = 0.5,
+    y = 1.08,
+    xanchor = "center"
+  ),
+  margin = list(t = 80),
+  showlegend = FALSE
+)
 ```
 
-```{r}
-
-```
+> Using a heatmap, I compared the top 5 most danceable tracks and the bottom 5 least danceable ones to identify distinguishing features.
+Surprisingly, I found that higher danceability was more associated with high arousal and valence, but not necessarily with higher tempo.
+In contrast, the least danceable tracks tended to have very high instrumentalness and tempo, but scored low on emotional expressiveness (low valence and arousal).
+This challenges the common assumption that faster music is always more danceable. Instead, emotional intensity and presence of vocals might matter more.
+Because this finding was counter-intuitive, I wanted to further explore why some tracks feel more danceable even if they’re slower, so I shifted from corpus-level to track-level analysis.
 
 # 1st Attempt at Explaining Danceability--Corpus-level comparison
 
@@ -169,7 +234,7 @@ ggplot(
   geom_point(alpha = 0.6) +
   geom_text(aes(label = label), hjust = -0.1, vjust = 0.3, size = 3, na.rm = TRUE) +
   scale_color_manual(
-    values = c("FALSE" = "grey80", "TRUE" = "lightgreen"),
+    values = c("FALSE" = "grey80", "TRUE" = "darkgreen"),
     labels = c("Other Tracks", "Selected Tracks"),
     name = "Track Type"
   ) +
@@ -290,7 +355,7 @@ This kind of structure is closely related to groove and may contribute to its da
 
 > Track 1 shows stable timbral energy concentrated in lower MFCC coefficients, suggesting a consistent and smooth sonic texture that supports groove.
 
-### Chroma-based 
+### Chroma-based
 
 ```{r}
 "features/wednesday-w-1.json" |>                           # Change the track
@@ -342,6 +407,22 @@ This kind of structure is closely related to groove and may contribute to its da
   labs(x = "Time (s)", y = "Template", fill = NULL) +
   theme_classic()  
 ```
+
+> In Track 1, we observe a highly dense and noisy chordogram, with no clear dominant chords over time. This suggests that the harmonic structure is either highly chromatic, constantly shifting, or contains frequent modulations. Such harmonic richness may contribute to expressiveness but may not strongly support predictability or groove — key components of danceability.
+
+### Tempogram
+
+```{r}
+"features/wednesday-w-1.json" |>
+  compmus_tempogram(window_size = 8, hop_size = 1, cyclic = TRUE) |>
+  ggplot(aes(x = time, y = bpm, fill = power)) +
+  geom_raster() +
+  scale_fill_viridis_c(guide = "none") +
+  labs(x = "Time (s)", y = "Tempo (BPM)") +
+  theme_classic()
+```
+
+> The tempogram comparison reveals a clear difference in rhythmic consistency between the two tracks. Track 1 exhibits a stable tempo across its duration, with two dominant bands around 95 BPM and 140 BPM. This suggests a layered, polyrhythmic feel that enhances its groove and danceability.
 
 Column{.tabset}
 ----
@@ -445,4 +526,43 @@ Overall, the more homogeneous timbre of Track 1 might contribute to stronger per
   theme_classic()  
 ```
 
+> By contrast, Track 2 shows much more structured harmonic repetition. We can see vertical bands, especially around the 25s and 75s marks, where certain chords (like C:maj or F:min) dominate across time. This regularity aligns with the self-similarity patterns previously observed and suggests a more repetitive, section-based harmonic plan. This structure may facilitate listener entrainment and thus support danceability.
+
+### Tempogram
+
+```{r}
+"features/wednesday-w-2.json" |>
+  compmus_tempogram(window_size = 8, hop_size = 1, cyclic = TRUE) |>
+  ggplot(aes(x = time, y = bpm, fill = power)) +
+  geom_raster() +
+  scale_fill_viridis_c(guide = "none") +
+  labs(x = "Time (s)", y = "Tempo (BPM)") +
+  theme_classic()
+```
+
+> Track 2 shows a more singular dominant tempo around 130 BPM, but it undergoes a noticeable disruption near the 75-second mark. This break in rhythmic flow might interfere with its groove and reduce the sense of momentum, potentially contributing to its lower danceability score.
+
 # Conclusion
+
+## Clustering
+
+```{r}
+compmus_dist |> 
+  hclust(method = "single") |> # Try single, average, and complete.
+  dendro_data() |>
+  ggdendrogram()
+top5 <- cluster_juice |> arrange(desc(danceability)) |> head(5)
+bottom5 <- cluster_juice |> arrange(danceability) |> head(5)
+
+# 画图
+heatmaply(top5,
+          main = "Top 5 Danceability Tracks",
+          dist_method = "euclidean",
+          hclust_method = "average")
+
+heatmaply(bottom5,
+          main = "Bottom 5 Danceability Tracks",
+          dist_method = "euclidean",
+          hclust_method = "average")
+```
+

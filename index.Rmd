@@ -161,7 +161,7 @@ valueBox("Why These?")
 
 ### Top vs Bottom Danceability Heatmap Analysis{.column .center data-width="90%"}
 
-```{r fig.width=10, fig.height=4}
+```{r}
 compmus_dist |> 
   hclust(method = "single") |> # Try single, average, and complete.
   dendro_data() |>
@@ -171,31 +171,23 @@ bottom5 <- cluster_juice |> arrange(danceability) |> head(5)
 
 # 画图
 top_plot <- heatmaply(top5,
-          main = NULL,  # 去掉标题避免太挤
+          main = "Top 5",
           dist_method = "euclidean",
           hclust_method = "average")
 
 bottom_plot <- heatmaply(bottom5,
-          main = NULL,
+          main = "Bottom 5",
           dist_method = "euclidean",
           hclust_method = "average")
-
-subplot(
-  top_plot, bottom_plot,
-  titleX = TRUE,
-  titleY = TRUE,
-  margin = 0.02
-) %>%
-layout(
-  title = list(
-    text = "Top vs Bottom 5 Danceability Tracks",
-    x = 0.5,
-    y = 1.08,
-    xanchor = "center"
-  ),
-  margin = list(t = 80),
-  showlegend = FALSE
-)
+subplot(top_plot, bottom_plot, titleX = TRUE, titleY = TRUE)%>%
+  layout(
+    title = list(
+      text = "Top vs Bottom 5 Danceability Tracks",
+      x = 0.5,
+      y = 1.1,         # 推高位置避免和图重叠
+      xanchor = "center"
+    )
+  )
 ```
 
 > Using a heatmap, I compared the top 5 most danceable tracks and the bottom 5 least danceable ones to identify distinguishing features.
@@ -544,25 +536,28 @@ Overall, the more homogeneous timbre of Track 1 might contribute to stronger per
 
 # Conclusion
 
-## Clustering
+Finding 1: **Tempo Isn’t Everything**
 
-```{r}
-compmus_dist |> 
-  hclust(method = "single") |> # Try single, average, and complete.
-  dendro_data() |>
-  ggdendrogram()
-top5 <- cluster_juice |> arrange(desc(danceability)) |> head(5)
-bottom5 <- cluster_juice |> arrange(danceability) |> head(5)
+Even though faster songs seem more energetic, **tempo alone doesn't guarantee danceability**.  
+In my analysis, wednesday-w-2 had a higher BPM than roemer-i-2, but was outperformed in danceability.  
+> *A fast beat might excite the body, but not necessarily move the feet.*
 
-# 画图
-heatmaply(top5,
-          main = "Top 5 Danceability Tracks",
-          dist_method = "euclidean",
-          hclust_method = "average")
+Finding 2: **Emotion Drives Movement**
 
-heatmaply(bottom5,
-          main = "Bottom 5 Danceability Tracks",
-          dist_method = "euclidean",
-          hclust_method = "average")
-```
+The top 5 most danceable tracks had:
 
+- **Higher arousal** (emotional energy)  
+- **Higher valence** (positive mood)  
+- **Lower instrumentalness** (more vocal presence)
+
+This suggests that emotional intensity and human-like qualities are key to making music feel danceable.
+
+Finding 3: **Structure Matters More Than You Think**
+
+From chroma-based self-similarity and cepstrograms, I found:
+
+- Danceable tracks often show **clear repetition** and **rhythmic regularity**.
+- These mid-level structures (groove, loops, call-and-response) are not captured by summary features alone.
+
+By zooming in on my own tracks with chromagrams, MFCCs, self-similarity, and chordograms, I realized:  
+*Danceable music is not just heard — it’s felt in your bones.*

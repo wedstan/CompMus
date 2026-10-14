@@ -236,13 +236,17 @@ bottom_plot <- heatmaply(bottom5,
 
 subplot(top_plot, bottom_plot, titleX = TRUE, titleY = TRUE, margin = 0.06) |>
   layout(
+    # Labels sit just above each half of the figure, left-aligned,
+    # so they never overlap on small screens or get cut off on large ones
     annotations = list(
-      list(text = "<b>Top 5</b> most danceable", x = 0.18, y = 1.16,
-           xref = "paper", yref = "paper", showarrow = FALSE),
-      list(text = "<b>Bottom 5</b> least danceable", x = 0.78, y = 1.16,
-           xref = "paper", yref = "paper", showarrow = FALSE)
+      list(text = "<b>Top 5</b>  most danceable", x = 0, y = 1,
+           xref = "paper", yref = "paper", xanchor = "left", yanchor = "bottom",
+           yshift = 6, showarrow = FALSE, font = list(size = 13)),
+      list(text = "<b>Bottom 5</b>  least danceable", x = 0.53, y = 1,
+           xref = "paper", yref = "paper", xanchor = "left", yanchor = "bottom",
+           yshift = 6, showarrow = FALSE, font = list(size = 13))
     ),
-    margin = list(t = 70)
+    margin = list(t = 36)
   ) |>
   config(displayModeBar = FALSE)
 ```
@@ -562,28 +566,68 @@ Overall, the more homogeneous timbre of Track 1 might contribute to stronger per
 
 # Conclusion {data-orientation=rows}
 
-Row
+Row {data-height=640}
 -----------------------------------------------------------------------
 
 ### Finding 1: Tempo is not the main driver {.text-card}
 
-Faster songs may feel more energetic, but **tempo alone does not determine danceability**. In this corpus, wednesday-w-2 (130 BPM) has a much higher tempo than roemer-i-2 (63 BPM), yet roemer-i-2 is the most danceable track.
+<div class="stat">
+<span class="stat-number">63 BPM</span>
+<span class="stat-label">tempo of the most danceable track (roemer-i-2)</span>
+</div>
 
-### Finding 2: Emotional features matter more {.text-card}
+<div class="stat">
+<span class="stat-number">100 of 108</span>
+<span class="stat-label">tracks in the corpus are faster than it</span>
+</div>
 
-The five most danceable tracks share:
+**Tempo alone does not determine danceability.** The five most danceable tracks are on average *slower* than the corpus mean, while the five least danceable are *faster*.
 
-- **higher arousal** (emotional energy)
-- **higher valence** (positive mood)
-- **lower instrumentalness** (more vocal presence)
+### Finding 2: Emotional features matter more
 
-This suggests that emotional intensity and vocal presence are more closely linked to danceability than tempo.
+```{r}
+group_means <- bind_rows(
+  `Top 5`    = top5    |> summarise(across(everything(), mean)),
+  `Bottom 5` = bottom5 |> summarise(across(everything(), mean)),
+  .id = "group"
+) |>
+  select(group, arousal, valence, instrumentalness, tempo) |>
+  pivot_longer(-group, names_to = "feature", values_to = "z") |>
+  mutate(feature = factor(feature, levels = rev(c("arousal", "valence", "instrumentalness", "tempo"))),
+         group = factor(group, levels = c("Top 5", "Bottom 5")))
+
+ggplot(group_means, aes(x = z, y = feature)) +
+  geom_vline(xintercept = 0, colour = "#b9b2a0", linetype = "dashed") +
+  geom_line(aes(group = feature), colour = "#e6dcc0", linewidth = 2.2) +
+  geom_point(aes(colour = group), size = 4.5) +
+  scale_colour_manual(values = c("Top 5" = "#5a3200", "Bottom 5" = "#f2c230")) +
+  scale_x_continuous(limits = c(-1.2, 1.2), breaks = c(-1, 0, 1),
+                     labels = c("below average", "corpus average", "above average")) +
+  labs(x = NULL, y = NULL) +
+  theme_dance() +
+  theme(panel.grid.major.y = element_blank(),
+        axis.text.y = element_text(size = 12, colour = ink))
+```
+
+> Average standardised feature values of the five most and five least danceable tracks. The most danceable tracks score **higher on arousal and valence** and **lower on instrumentalness** (more vocal presence), and they are slower, not faster.
 
 ### Finding 3: Structure matters {.text-card}
 
-The chroma- and timbre-based self-similarity matrices suggest that danceable tracks tend to show **clear repetition** and **rhythmic regularity**. These mid-level structures (grooves, loops, repeated sections) are not captured by summary features alone.
+My two tracks, compared on the track-level plots:
 
-Row {data-height=200}
+<table class="compare">
+<thead><tr><th></th><th>Track 1</th><th>Track 2</th></tr></thead>
+<tbody>
+<tr><td>Danceability</td><td><b>0.85</b></td><td><b>0.72</b></td></tr>
+<tr><td>Harmony (chroma SSM)</td><td>Regular, grid-like repetition</td><td>More varied, diffuse</td></tr>
+<tr><td>Timbre (MFCC SSM)</td><td>Large repeated blocks</td><td>Fragmented</td></tr>
+<tr><td>Tempo (tempogram)</td><td>Stable bands at ~95 and ~140 BPM</td><td>~130 BPM, break near 75 s</td></tr>
+</tbody>
+</table>
+
+The more danceable track shows **clearer repetition** and **steadier rhythm**, structure that summary features alone do not capture.
+
+Row {data-height=150}
 -----------------------------------------------------------------------
 
 ### Limitations {.text-card}

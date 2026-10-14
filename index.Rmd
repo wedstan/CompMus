@@ -28,6 +28,10 @@ ink   <- "#222222"   # text
 mine_col <- "#e0a100"   # my tracks (dark yellow)
 ref_col  <- "#2b2b2b"   # most danceable track (charcoal)
 grey_col <- "#cfcabb"   # all other tracks
+
+# Shared sequential palette for heatmaps, chromagrams, SSMs etc.
+# (cream -> mustard -> brown; low values light, high values dark)
+dance_cols <- c("#fff6d5", "#f2c230", "#c47a00", "#5a3200")
 mine  <- c("wednesday-w-1", "wednesday-w-2")
 
 theme_dance <- function(base_size = 13) {
@@ -221,11 +225,13 @@ bottom5 <- cluster_juice |> arrange(danceability) |> head(5)
 top_plot <- heatmaply(top5,
           dist_method = "euclidean",
           hclust_method = "average",
+          colors = colorRampPalette(dance_cols)(256),
           fontsize_row = 10, fontsize_col = 10)
 
 bottom_plot <- heatmaply(bottom5,
           dist_method = "euclidean",
           hclust_method = "average",
+          colors = colorRampPalette(dance_cols)(256),
           fontsize_row = 10, fontsize_col = 10)
 
 subplot(top_plot, bottom_plot, titleX = TRUE, titleY = TRUE, margin = 0.06) |>
@@ -339,7 +345,7 @@ Column{.tabset}
                 "G#|Ab", "A", "A#|Bb", "B"
               )
   ) +
-  scale_fill_viridis_c() +
+  scale_fill_gradientn(colours = dance_cols) +
   labs(x = "Time (s)", y = NULL, fill = NULL) +
   theme_raster()
 ```
@@ -358,7 +364,7 @@ This kind of structure is closely related to groove and may contribute to its da
     breaks = 0:12,
     minor_breaks = NULL,
   ) +
-  scale_fill_viridis_c(guide = "none") +
+  scale_fill_gradientn(colours = dance_cols, guide = "none") +
   labs(x = "Time (s)", y = "Coefficient Number", fill = NULL) +
   theme_raster()
 ```
@@ -376,7 +382,7 @@ This kind of structure is closely related to groove and may contribute to its da
   ) |>
   ggplot(aes(x = xtime, y = ytime, fill = d)) +
   geom_raster() +
-  scale_fill_viridis_c(guide = "none") +
+  scale_fill_gradientn(colours = dance_cols, guide = "none") +
   coord_fixed() +
   labs(x = "Time (s)", y = NULL, fill = NULL) +
   theme_raster()
@@ -395,7 +401,7 @@ This kind of structure is closely related to groove and may contribute to its da
   ) |>
   ggplot(aes(x = xtime, y = ytime, fill = d)) +
   geom_raster() +
-  scale_fill_viridis_c(guide = "none") +
+  scale_fill_gradientn(colours = dance_cols, guide = "none") +
   coord_fixed() +
   labs(x = "Time (s)", y = NULL, fill = NULL) +
   theme_raster()
@@ -415,7 +421,7 @@ This kind of structure is closely related to groove and may contribute to its da
   ) |>
   ggplot(aes(x = time, y = name, fill = d)) +
   geom_raster() +
-  scale_fill_viridis_c(guide = "none") +
+  scale_fill_gradientn(colours = dance_cols, guide = "none") +
   labs(x = "Time (s)", y = "Template", fill = NULL) +
   theme_raster()
 ```
@@ -429,7 +435,7 @@ This kind of structure is closely related to groove and may contribute to its da
   compmus_tempogram(window_size = 8, hop_size = 1, cyclic = TRUE) |>
   ggplot(aes(x = time, y = bpm, fill = power)) +
   geom_raster() +
-  scale_fill_viridis_c(guide = "none") +
+  scale_fill_gradientn(colours = dance_cols, guide = "none") +
   labs(x = "Time (s)", y = "Tempo (BPM)") +
   theme_raster()
 ```
@@ -455,7 +461,7 @@ Column{.tabset}
                 "G#|Ab", "A", "A#|Bb", "B"
               )
   ) +
-  scale_fill_viridis_c() +
+  scale_fill_gradientn(colours = dance_cols) +
   labs(x = "Time (s)", y = NULL, fill = NULL) +
   theme_raster()
 ```
@@ -474,7 +480,7 @@ It might be more expressive or fluid, but less predictable, which may slightly r
     breaks = 0:12,
     minor_breaks = NULL,
   ) +
-  scale_fill_viridis_c(guide = "none") +
+  scale_fill_gradientn(colours = dance_cols, guide = "none") +
   labs(x = "Time (s)", y = "Coefficient Number", fill = NULL) +
   theme_raster()
 ```
@@ -494,7 +500,7 @@ Overall, the more homogeneous timbre of Track 1 might contribute to stronger per
   ) |>
   ggplot(aes(x = xtime, y = ytime, fill = d)) +
   geom_raster() +
-  scale_fill_viridis_c(guide = "none") +
+  scale_fill_gradientn(colours = dance_cols, guide = "none") +
   coord_fixed() +
   labs(x = "Time (s)", y = NULL, fill = NULL) +
   theme_raster()
@@ -513,7 +519,7 @@ Overall, the more homogeneous timbre of Track 1 might contribute to stronger per
   ) |>
   ggplot(aes(x = xtime, y = ytime, fill = d)) +
   geom_raster() +
-  scale_fill_viridis_c(guide = "none") +
+  scale_fill_gradientn(colours = dance_cols, guide = "none") +
   coord_fixed() +
   labs(x = "Time (s)", y = NULL, fill = NULL) +
   theme_raster()
@@ -533,7 +539,7 @@ Overall, the more homogeneous timbre of Track 1 might contribute to stronger per
   ) |>
   ggplot(aes(x = time, y = name, fill = d)) +
   geom_raster() +
-  scale_fill_viridis_c(guide = "none") +
+  scale_fill_gradientn(colours = dance_cols, guide = "none") +
   labs(x = "Time (s)", y = "Template", fill = NULL) +
   theme_raster()
 ```
@@ -547,7 +553,7 @@ Overall, the more homogeneous timbre of Track 1 might contribute to stronger per
   compmus_tempogram(window_size = 8, hop_size = 1, cyclic = TRUE) |>
   ggplot(aes(x = time, y = bpm, fill = power)) +
   geom_raster() +
-  scale_fill_viridis_c(guide = "none") +
+  scale_fill_gradientn(colours = dance_cols, guide = "none") +
   labs(x = "Time (s)", y = "Tempo (BPM)") +
   theme_raster()
 ```

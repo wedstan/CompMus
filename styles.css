@@ -1,0 +1,146 @@
+/* Custom styling for the "Make the World Dance" dashboard
+   Yellow-based palette; the yellow matches the top end of the
+   viridis scale used in the heatmaps and spectrograms. */
+
+:root {
+  --text: #2b2b2b;
+  --muted: #5f5a4a;
+  --yellow: #f2c230;        /* main yellow */
+  --yellow-dark: #c99a06;   /* darker yellow for lines and accents */
+  --yellow-soft: #fff6d5;   /* pale yellow for note areas */
+  --bg: #fffbea;            /* page background */
+  --line: #eadfb4;          /* card borders */
+}
+
+body,
+#dashboard-container,
+.dashboard-page-wrapper,
+.dashboard-column,
+.dashboard-row {
+  background: var(--bg) !important;
+}
+
+body {
+  color: var(--text);
+}
+
+/* Navbar */
+.navbar,
+.navbar.navbar-inverse {
+  background: var(--yellow) !important;
+  border: none !important;
+  border-bottom: 1px solid var(--yellow-dark) !important;
+}
+
+.navbar-brand {
+  color: var(--text) !important;
+  font-weight: 700;
+}
+
+.navbar .navbar-nav > li > a,
+.navbar .navbar-nav .nav-link {
+  color: rgba(43, 43, 43, 0.72) !important;
+}
+
+.navbar .navbar-nav > li > a:hover,
+.navbar .navbar-nav .nav-link:hover {
+  color: var(--text) !important;
+}
+
+.navbar .navbar-nav > li.active > a,
+.navbar .navbar-nav .nav-link.active,
+.navbar .navbar-nav > li > a.active {
+  color: var(--text) !important;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.35) !important;
+  box-shadow: inset 0 -3px 0 var(--text);
+}
+
+/* Cards */
+.chart-wrapper,
+.nav-tabs-custom {
+  background: #ffffff !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 4px !important;
+  box-shadow: none !important;
+}
+
+.nav-tabs-custom .chart-wrapper {
+  border: none !important;
+}
+
+.chart-title {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text);
+  background: #ffffff;
+  border-bottom: 2px solid var(--yellow) !important;
+}
+
+/* Commentary under each chart */
+.chart-notes {
+  background: var(--yellow-soft) !important;
+  border-top: 1px solid var(--line) !important;
+  color: var(--text) !important;
+  font-size: 14px !important;
+  line-height: 1.55 !important;
+  padding: 10px 16px !important;
+  max-height: 34%;
+  overflow-y: auto;
+}
+
+/* Tabs */
+.nav-tabs-custom > .nav-tabs {
+  border-bottom: 1px solid var(--line) !important;
+}
+
+.nav-tabs-custom > .nav-tabs > li.active,
+.nav-tabs-custom > .nav-tabs > li.nav-item.active {
+  border-top-color: var(--yellow) !important;
+}
+
+.nav-tabs-custom > .nav-tabs > li > a,
+.nav-tabs-custom > .nav-tabs .nav-link {
+  color: var(--muted) !important;
+  font-size: 14px;
+}
+
+.nav-tabs-custom > .nav-tabs > li.active > a,
+.nav-tabs-custom > .nav-tabs .nav-link.active,
+.nav-tabs-custom > .nav-tabs > li.active .nav-link {
+  color: var(--text) !important;
+  font-weight: 600;
+}
+
+/* Text-only cards (introduction, conclusion) */
+.text-card .chart-stage {
+  padding: 14px 20px !important;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.text-card h4 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 18px 0 6px;
+  padding-left: 8px;
+  border-left: 3px solid var(--yellow);
+}
+
+.text-card h4:first-child {
+  margin-top: 4px;
+}
+
+.text-card ul,
+.text-card ol {
+  padding-left: 22px;
+}
+
+.text-card strong {
+  background: linear-gradient(transparent 60%, #ffe58a 60%);
+}
+
+/* flexdashboard leaves an empty notes strip on text-only cards */
+.text-card .chart-notes:empty {
+  display: none;
+}

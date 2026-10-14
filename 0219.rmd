@@ -106,6 +106,30 @@ key_templates <-
 
 ## 1st attempt
 
+```{r}
+top5 <- compmus2025 |> arrange(desc(danceability)) |> head(5)
+bottom5 <- compmus2025 |> arrange(danceability) |> head(5)
+
+# 设置 filename 为 rownames
+top5_matrix <- top5 |> column_to_rownames("filename")
+bottom5_matrix <- bottom5 |> column_to_rownames("filename")
+
+# 只保留数值型特征
+top5_num <- top5_matrix |> select(where(is.numeric))
+bottom5_num <- bottom5_matrix |> select(where(is.numeric))
+
+# 画图
+heatmaply(top5_num,
+          main = "Top 5 Danceability Tracks",
+          dist_method = "euclidean",
+          hclust_method = "average")
+
+heatmaply(bottom5_num,
+          main = "Bottom 5 Danceability Tracks",
+          dist_method = "euclidean",
+          hclust_method = "average")
+```
+
 ## 2nd Attempt: Track-Level Analysis
 
 # Feature Comparison {.tabset}

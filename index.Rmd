@@ -67,7 +67,7 @@ scatter_fit <- function(x, x_lab, title) {
                 colour = "#8a6a00", fill = "#f2c230", alpha = 0.25, linewidth = 0.9) +
     geom_point(data = \(d) filter(d, filename %in% mine), colour = mine_col, size = 3.4) +
     labs(title = title,
-         subtitle = "Grey: class corpus; yellow: my two tracks; line: OLS fit with 95% CI",
+         subtitle = "Yellow: my two tracks\nLine: linear fit with 95% CI",
          x = x_lab, y = "Danceability") +
     theme_dance()
 }
@@ -210,13 +210,13 @@ I was particularly drawn to their groove, rhythmic patterns and danceable energy
 
 #### Approach
 
-1. **Corpus level:** compare the most and least danceable tracks, and test simple hypotheses (tempo, arousal, approachability).
+1. **Corpus level:** compare the most and least danceable tracks, test simple hypotheses (tempo, arousal, approachability), and train a random forest to tell AI-generated from non-AI tracks.
 2. **Track level:** look at mid-level structure in my own tracks (chromagrams, cepstrograms, self-similarity matrices, chordograms, tempograms).
 
 Column {data-width=620}
 -----------------------------------------------------------------------
 
-### Top 5 vs bottom 5 tracks by danceability (standardised features)
+### Top 5 vs bottom 5 tracks by danceability (standardised features) {.heatmap-card}
 
 ```{r}
 top5 <- cluster_juice |> arrange(desc(danceability)) |> head(5)
@@ -287,12 +287,13 @@ ggplot(tempo_df, aes(x = tempo, y = danceability, colour = group)) +
   scale_x_continuous(limits = c(50, 200), breaks = seq(50, 200, 25)) +
   scale_y_continuous(limits = c(0, 1)) +
   labs(
-    title = "Where my tracks sit in the danceability space",
-    subtitle = "Each dot is one track in the class corpus",
+    title = "Tempo vs danceability",
+    subtitle = "Black: most danceable track\nYellow: my two tracks",
     x = "Tempo (BPM)",
     y = "Danceability"
   ) +
-  theme_dance()
+  theme_dance() +
+  theme(legend.position = "none")   # points are labelled directly
 ```
 
 > **Thinking:**<br><br> Compared to the full dataset, my selected tracks (wednesday-w-1 and wednesday-w-2) exhibit above-average danceability, indicating a strong groove and rhythmic presence.
@@ -302,7 +303,7 @@ Interestingly, although my tracks have a higher tempo, they are still outperform
 ### Hypothesis 2: Arousal → Danceability
 
 ```{r}
-scatter_fit(arousal, "Arousal", "Relationship between arousal and danceability")
+scatter_fit(arousal, "Arousal", "Arousal vs danceability")
 ```
 
 > **Thinking:** <br><br> While tempo and approachability showed little or no relationship to danceability, arousal appears to have a weak-to-moderate positive correlation with it.
@@ -313,7 +314,7 @@ This suggests that while energy might help, it is not the sole or strongest fact
 ### Hypothesis 3: Approachability → Danceability
 
 ```{r}
-scatter_fit(approachability, "Approachability", "Relationship between approachability and danceability")
+scatter_fit(approachability, "Approachability", "Approachability vs danceability")
 ```
 
 > **Thinking:** <br><br> Although it might seem intuitive that more approachable tracks are also more danceable, this plot reveals no clear linear relationship between the two features.
@@ -327,6 +328,61 @@ and tempograms, which encode rhythmic energy over time.
 In short, danceability is not simply a sum of isolated attributes, but a result of how musical elements interact temporally and structurally — across sections, grooves, and repetitions.
 Therefore, I decided to shift my focus from the entire corpus to a deeper structural analysis of my own selected track.
 By visualizing features such as chromagrams and MFCCs over time, I aim to uncover whether my track contains structural signatures that contribute to its danceability.
+
+### Classification: AI vs non-AI
+
+```{r}
+# Random forest: can the five features tell AI-generated from non-AI tracks?
+ai_df <- compmus2025 |>
+  filter(!is.na(ai)) |>
+  mutate(ai = factor(if_else(ai, "AI", "Non-AI")))
+ai_formula <- ai ~ arousal + danceability + instrumentalness + tempo + valence
+
+# 5-fold cross-validation, repeated 20 times with different random splits
+cv_accuracy <- function(seed) {
+  set.seed(seed)
+  folds <- rsample::vfold_cv(ai_df, v = 5)
+  preds <- map_dfr(folds$splits, \(split) {
+    train <- rsample::analysis(split)
+    test  <- rsample::assessment(split)
+    fit <- ranger::ranger(ai_formula, data = train, num.trees = 500,
+                          probability = TRUE, seed = seed)
+    prob <- predict(fit, test)$predictions
+    tibble(truth = test$ai, pred = colnames(prob)[max.col(prob)])
+  })
+  mean(preds$truth == preds$pred)
+}
+acc      <- map_dbl(1:20, cv_accuracy)
+baseline <- max(table(ai_df$ai)) / nrow(ai_df)
+
+# Feature importance (impurity), averaged over 20 fits on all labelled tracks
+rf_importance <- map_dfr(1:20, \(seed) {
+  fit <- ranger::ranger(ai_formula, data = ai_df, num.trees = 500,
+                        probability = TRUE, importance = "impurity", seed = seed)
+  enframe(ranger::importance(fit), name = "feature", value = "importance")
+}) |>
+  group_by(feature) |>
+  summarise(importance = mean(importance)) |>
+  mutate(feature = fct_reorder(feature, importance))
+
+ggplot(rf_importance, aes(x = importance, y = feature)) +
+  geom_col(aes(fill = feature == "tempo"), width = 0.65) +
+  scale_fill_manual(values = c(`FALSE` = "#c47a00", `TRUE` = "#f2d27a"), guide = "none") +
+  labs(
+    title = "AI vs non-AI: what matters?",
+    subtitle = paste0("Random forest feature importance\nCV accuracy ",
+                      round(100 * mean(acc)), "% vs ", round(100 * baseline), "% baseline"),
+    x = "Importance (impurity)", y = NULL
+  ) +
+  theme_dance() +
+  theme(panel.grid.major.y = element_blank(),
+        axis.text.y = element_text(size = 12, colour = ink))
+```
+
+> **Thinking:** <br><br> To see whether these features also carry information about how a track was made, I trained a random forest (500 trees) to tell AI-generated tracks (n = `r sum(ai_df$ai == "AI")`) from non-AI tracks (n = `r sum(ai_df$ai == "Non-AI")`).
+Across 20 repetitions of 5-fold cross-validation it reached an average accuracy of **`r round(100 * mean(acc))`%** (range `r round(100 * min(acc))`–`r round(100 * max(acc))`%), compared with a `r round(100 * baseline)`% baseline from always predicting the larger class.
+The features therefore carry some, but limited, information about whether a track is AI-generated.
+The model relies most on instrumentalness and arousal, while **tempo is again the least informative feature**, consistent with the danceability results.
 
 # Track-Level Analysis
 
@@ -602,7 +658,7 @@ ggplot(group_means, aes(x = z, y = feature)) +
   geom_point(aes(colour = group), size = 4.5) +
   scale_colour_manual(values = c("Top 5" = "#5a3200", "Bottom 5" = "#f2c230")) +
   scale_x_continuous(limits = c(-1.2, 1.2), breaks = c(-1, 0, 1),
-                     labels = c("below average", "corpus average", "above average")) +
+                     labels = c("below\naverage", "corpus\naverage", "above\naverage")) +
   labs(x = NULL, y = NULL) +
   theme_dance() +
   theme(panel.grid.major.y = element_blank(),

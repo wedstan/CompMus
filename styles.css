@@ -140,7 +140,98 @@ body {
   background: linear-gradient(transparent 60%, #ffe58a 60%);
 }
 
-/* flexdashboard leaves an empty notes strip on text-only cards */
-.text-card .chart-notes:empty {
-  display: none;
+/* Text-only cards never have notes; hide the empty strip flexdashboard adds,
+   and let long content scroll inside the card on small screens */
+.text-card .chart-notes {
+  display: none !important;
+}
+
+.text-card .chart-stage {
+  overflow-y: auto !important;
+}
+
+/* Conclusion: key numbers */
+.stat {
+  margin: 4px 0 14px;
+}
+
+.stat-number {
+  display: block;
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #5a3200;
+}
+
+.stat-label {
+  display: block;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+/* Conclusion: track comparison table */
+table.compare {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  margin: 8px 0 14px;
+  font-size: 14px;
+}
+
+@media (max-width: 1100px) {
+  table.compare { font-size: 12.5px; }
+  .stat-number { font-size: 28px; }
+}
+
+table.compare th {
+  background: var(--yellow);
+  color: var(--text);
+  font-weight: 600;
+  padding: 6px 8px;
+  text-align: left;
+}
+
+table.compare td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+table.compare td:first-child {
+  color: var(--muted);
+  width: 34%;
+}
+
+table.compare tr:nth-child(even) td {
+  background: var(--yellow-soft);
+}
+
+/* ---------- Phones (flexdashboard switches to a stacked layout below 768px) ---------- */
+@media (max-width: 767px) {
+  /* Let the commentary grow with its content instead of being cut off */
+  .chart-notes {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* The two heatmaps need ~640px side by side: swipe sideways instead of squashing */
+  .heatmap-card .chart-stage {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .heatmap-card .html-widget {
+    min-width: 640px;
+  }
+
+  .heatmap-card .chart-title::after {
+    content: "  \2194 swipe to see both";
+    font-weight: 400;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+
+  .stat-number {
+    font-size: 26px;
+  }
 }
